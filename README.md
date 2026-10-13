@@ -5,6 +5,9 @@ should get, plus the auto-merge approval flow. Anything specific to one repo sta
 
 Every repo references this at `main`, so a change to these presets or the Renovate workflows reaches all of them on their next Renovate run.
 
+This is for our own repositories and isn't supported for outside use. It changes at `main` without notice, so if you
+extend it, every change reaches you too. Copy what you need instead.
+
 ## Presets
 
 | Preset                | Use for                                        |
@@ -72,13 +75,9 @@ Check these when moving a repo over. Most of them fail quietly if they're missin
   `renovate-approve` can't approve.
 - **Settings → General:** "Allow auto-merge". This is already on in all our repos. Check it's still on when moving a
   repo over, because `platformAutomerge` needs it.
-- **`RENOVATE_GITHUB_TOKEN`:** the secret must be set, and the token needs read access to this repo so Renovate can
-  fetch the presets.
+- **`RENOVATE_GITHUB_TOKEN`:** the secret must be set.
 - **`RENOVATE_AUTOMERGE_PAUSED`:** the organisation variable must be visible to the repo. If it isn't, pausing
   silently does nothing there.
-
-This repo is internal, so its own Settings → Actions → General → Access must allow repos in the organisation.
-Otherwise `uses: …@main` won't resolve.
 
 ## How auto-merge works
 
