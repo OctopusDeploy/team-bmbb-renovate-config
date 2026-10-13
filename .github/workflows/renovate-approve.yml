@@ -1,0 +1,86 @@
+# Reusable workflow that supports Renovate auto-merging the PRs we've opted in to. Renovate turns on GitHub's
+# auto-merge and rebases the PRs onto main on each run, and GitHub does the merge. This approves the PRs, and
+# withdraws the approval if anyone else pushes to the branch.
+#
+# To pause auto-merging, follow "Pausing auto-merge" in README.md. Setting
+# RENOVATE_AUTOMERGE_PAUSED to `true` only stops new approvals: PRs that are already approved still merge.
+name: Auto-approve Renovate pull requests
+
+on:
+  workflow_call:
+    inputs:
+      renovate-actor:
+        description: The account Renovate opens PRs as
+        type: string
+        required: false
+        default: team-github-bot
+      branch-prefix:
+        description: The branch prefix Renovate uses
+        type: string
+        required: false
+        default: renovate/
+
+jobs:
+  approve-pr-renovate:
+    runs-on: ubuntu-latest
+    # Only act on Renovate's own changes, not hand-added labels or edits.
+    # Labels are unioned across a group but automerge requires every package to allow it, so also check the
+    # description. Mixed groups are left for a human.
+    if: >-
+      github.event_name == 'pull_request' &&
+      (github.event.action != 'labeled' || github.event.label.name == 'automerge') &&
+      vars.RENOVATE_AUTOMERGE_PAUSED != 'true' &&
+      github.actor == inputs.renovate-actor &&
+      startsWith(github.head_ref, inputs.branch-prefix) &&
+      contains(github.event.pull_request.labels.*.name, 'automerge') &&
+      contains(github.event.pull_request.body, '**Automerge**: Enabled.')
+    permissions:
+      pull-requests: write
+    # No concurrency group: a cancelled duplicate run shows as a failed check on the PR, and Renovate treats any
+    # failed check as a red branch. Each label fires its own run instead: runs for other labels are skipped by the
+    # `if` above, and the step below skips approving again.
+    steps:
+      # Renovate can't approve its own PR, so main's required review would never be satisfied.
+      - name: ✅ Approve renovate PR
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -o pipefail
+          # --slurp merges the pages into one array first; gh doesn't allow it with --jq, so pipe to jq.
+          approved=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/reviews" --paginate --slurp |
+            jq '[add[] | select(.user.login == "github-actions[bot]" and .state == "APPROVED" and .commit_id == env.HEAD_SHA)] | length')
+          if [ "$approved" -gt 0 ]; then
+            echo "Already approved at $HEAD_SHA"
+          else
+            gh pr review --approve "$PR_URL"
+          fi
+
+  # The bot's approval only vouches for Renovate's own changes. If anyone else pushes, dismiss it so the PR needs a
+  # human review like any other, rather than auto-merging what they pushed. Renovate stops updating a branch once
+  # someone else has pushed to it, so nothing approves it again. Runs even while auto-merge is paused.
+  dismiss-approval-renovate:
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.action == 'synchronize' &&
+      github.actor != inputs.renovate-actor &&
+      startsWith(github.head_ref, inputs.branch-prefix)
+    permissions:
+      pull-requests: write
+    steps:
+      - name: 🚫 Dismiss bot approval
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -o pipefail
+          gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/reviews" --paginate \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and .state == "APPROVED") | .id' |
+          while read -r id; do
+            gh api -X PUT "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/reviews/$id/dismissals" \
+              -f event=DISMISS -f message="Someone other than Renovate pushed to this branch, so it needs a human review."
+            echo "Dismissed review $id"
+          done

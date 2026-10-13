@@ -1,0 +1,38 @@
+// Renovate config for our .NET repositories.
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  description: 'Big Mouth Billy Bass .NET repositories',
+
+  extends: ['github>OctopusDeploy/team-bmbb-renovate-config:default.json5'],
+
+  enabledManagers: ['nuget', 'github-actions'],
+
+  ignoreDeps: [
+    'dotnet-sdk', // .NET SDK updates in global.json are a non-trivial piece of work, so we don't want surprise PRs.
+  ],
+
+  packageRules: [
+    {
+      // Stay below v8, which is no longer free.
+      matchPackageNames: ['FluentAssertions', 'FluentAssertions.Json'],
+      allowedVersions: '<8',
+    },
+    {
+      // Test and build tooling only; a green build is enough.
+      // Only list packages that version independently. Labels are unioned across a group, so a monorepo
+      // package (e.g. Microsoft.AspNetCore.Mvc.Testing) would automerge the production upgrades grouped with it.
+      matchPackageNames: [
+        'coverlet.*',
+        'xunit*',
+        'Microsoft.NET.Test.Sdk',
+        'Microsoft.TestPlatform.*',
+        'Microsoft.Testing.Platform*',
+        'WireMock.Net*',
+        'GitHubActionsTestLogger',
+        'NSubstitute',
+      ],
+      automerge: true,
+      addLabels: ['automerge'],
+    },
+  ],
+}

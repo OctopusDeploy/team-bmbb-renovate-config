@@ -1,0 +1,62 @@
+// Base config for Big Mouth Billy Bass repos. Repos extend this directly or through one ecosystem preset.
+//
+// Referenced at `main` on purpose so one commit reaches every repo.
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  description: 'Big Mouth Billy Bass base Renovate config',
+
+  extends: [
+    'config:recommended',
+    'mergeConfidence:all-badges',
+  ],
+
+  timezone: 'Australia/Brisbane',
+  labels: ['dependencies'],
+  reviewers: ['team:team-big-mouth-billy-bass'],
+  prConcurrentLimit: 10,
+  prHourlyLimit: 5,
+
+  // Auto-merge is opt-in per package via `automerge: true`. The renovate-approve workflow supplies the approval.
+  automergeType: 'pr',
+  automergeStrategy: 'squash',
+  platformAutomerge: true,
+
+  // Not every repo uses Conventional Commits, so match each repo's own commit history.
+  semanticCommits: 'auto',
+
+  // Sensible Defaults 5.3: give the ecosystem time to spot malicious or broken releases.
+  // Vulnerability alert PRs bypass this.
+  minimumReleaseAge: '2 days',
+
+  // Dependency Management Sensible Defaults 5.4: raise PRs for known vulnerabilities from the OSV database.
+  osvVulnerabilityAlerts: true,
+
+  // Label vulnerability PRs so MQS can filter for them and review them first. Renovate adds
+  // `[SECURITY]` to the title but no label by default. addLabels keeps the `dependencies` label.
+  vulnerabilityAlerts: {
+    addLabels: ['security'],
+  },
+
+  packageRules: [
+    {
+      // pin/pinDigest/digest updates have no release timestamp, so minimumReleaseAge can never be
+      // satisfied and its stability check would leave those PRs pending forever.
+      // https://github.com/renovatebot/renovate/issues/40288
+      matchUpdateTypes: ['pin', 'pinDigest', 'digest'],
+      minimumReleaseAge: null,
+      prBodyNotes: [
+        '**Manual supply-chain check:** `minimumReleaseAge` cannot be enforced for pin/digest updates because they have no release timestamp. Before merging, confirm this commit SHA has been published for at least **2 days**.',
+      ],
+    },
+    {
+      // Pin third-party actions to a commit SHA, since tags can be moved.
+      matchManagers: ['github-actions'],
+      matchPackageNames: [
+        '!actions/**', // Official GitHub actions; don't pin.
+        // Our own actions, and our shared workflows, which are deliberately tracked at `main`.
+        '!OctopusDeploy/**',
+      ],
+      pinDigests: true,
+    },
+  ],
+}

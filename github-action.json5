@@ -1,0 +1,55 @@
+// Renovate config for our JavaScript GitHub Actions.
+//
+// Repos using this preset must also allow the post-upgrade command in their own renovate-config.js, because
+// allowedCommands and allowShellExecutorForPostUpgradeCommands are self-hosted options that presets can't set.
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  description: 'Big Mouth Billy Bass JavaScript GitHub Action repositories',
+
+  extends: [
+    'github>OctopusDeploy/team-bmbb-renovate-config:default.json5',
+    ':pinVersions',
+  ],
+
+  enabledManagers: ['npm', 'github-actions'],
+
+  // Our actions release with release-please, which needs Conventional Commits, so don't let Renovate guess.
+  semanticCommits: 'enabled',
+
+  // Rebuild dist/ in the PR. --ignore-scripts applies to the install only; the build needs our own pre/postbuild scripts.
+  postUpgradeTasks: {
+    commands: ['npm ci --ignore-scripts && npm run build'],
+    fileFilters: ['**/index.js'],
+    executionMode: 'update',
+  },
+
+  // Auto-merge anything that can't end up in dist/. Runtime deps, the dist/ build tooling, the Node
+  // version, and pin/digest updates stay on manual review.
+  packageRules: [
+    {
+      // A Node major must move together.
+      matchPackageNames: ['node', '@types/node'],
+      matchUpdateTypes: ['major'],
+      groupName: 'Node.js major',
+      prBodyNotes: [
+        '**Node.js major:** GitHub Actions only supports specific Node runtimes. Before merging, check GitHub supports this version for actions, and update `runs: using:` in `action.yml` in this PR to match.',
+      ],
+    },
+    {
+      // ncc only bundles runtime dependencies, so dev dependencies never reach dist/, except the tools that build it.
+      matchDepTypes: ['devDependencies'],
+      matchPackageNames: ['!typescript', '!esbuild', '!@vercel/ncc'],
+      matchUpdateTypes: ['minor', 'patch'],
+      automerge: true,
+      addLabels: ['automerge'],
+    },
+    {
+      // Actions used by our own workflows. These run in CI but don't ship in dist/.
+      matchManagers: ['github-actions'],
+      matchPackageNames: ['!node'],
+      matchUpdateTypes: ['minor', 'patch'],
+      automerge: true,
+      addLabels: ['automerge'],
+    },
+  ],
+}
