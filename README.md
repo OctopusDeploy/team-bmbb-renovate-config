@@ -109,8 +109,10 @@ the PR is approved again.
 
 ## Adding an auto-merge rule
 
-- Only auto-merge what can't reach shipped code: test tooling, dev dependencies, CI actions. A green build should be
-  all the confidence you need.
+- The presets here only auto-merge what can't reach shipped code in any repo: test tooling, dev dependencies, CI
+  actions. A green build should be all the confidence you need.
+- A repo's own `renovate-config.js` can also auto-merge minor and patch updates to runtime dependencies, as long as
+  its tests cover the code that uses them. Runtime majors stay on manual review.
 - Always pair `automerge: true` with `addLabels: ['automerge']`. The approve workflow needs both the label and
   Renovate's "Automerge: Enabled" note in the PR body.
 - Watch out for grouping. `config:recommended` groups monorepo packages, and labels are combined across a group. Don't
