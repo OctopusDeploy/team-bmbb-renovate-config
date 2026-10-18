@@ -27,8 +27,9 @@
   // version, and pin/digest updates stay on manual review.
   packageRules: [
     {
-      // A Node major must move together.
-      matchPackageNames: ['node', '@types/node'],
+      // A Node major must move together. Match on depName: setup-node's `node-version` has the packageName
+      // `actions/node-versions`, so matchPackageNames would miss it.
+      matchDepNames: ['node', '@types/node'],
       matchUpdateTypes: ['major'],
       groupName: 'Node.js major',
       prBodyNotes: [
@@ -44,9 +45,10 @@
       addLabels: ['automerge'],
     },
     {
-      // Actions used by our own workflows. These run in CI but don't ship in dist/.
+      // Actions used by our own workflows. These run in CI but don't ship in dist/. setup-node's `node-version`
+      // is excluded by depName, as above.
       matchManagers: ['github-actions'],
-      matchPackageNames: ['!node'],
+      matchDepNames: ['!node'],
       matchUpdateTypes: ['minor', 'patch'],
       automerge: true,
       addLabels: ['automerge'],
