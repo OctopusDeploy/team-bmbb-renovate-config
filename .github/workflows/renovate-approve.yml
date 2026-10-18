@@ -24,8 +24,10 @@ jobs:
   approve-pr-renovate:
     runs-on: ubuntu-latest
     # Only act on Renovate's own changes, not hand-added labels or edits.
-    # Labels are unioned across a group but automerge requires every package to allow it, so also check the
-    # description. Mixed groups are left for a human.
+    # Labels are unioned across a group but Renovate only turns on GitHub's auto-merge when every package allows
+    # it, so also check Renovate turned it on. Mixed groups are left for a human.
+    # Renovate adds the label and turns on auto-merge in separate calls, in either order, so callers trigger on
+    # both `labeled` and `auto_merge_enabled`, and whichever comes second sees both.
     if: >-
       github.event_name == 'pull_request' &&
       (github.event.action != 'labeled' || github.event.label.name == 'automerge') &&
@@ -33,7 +35,8 @@ jobs:
       github.actor == inputs.renovate-actor &&
       startsWith(github.head_ref, inputs.branch-prefix) &&
       contains(github.event.pull_request.labels.*.name, 'automerge') &&
-      contains(github.event.pull_request.body, '**Automerge**: Enabled.')
+      github.event.pull_request.auto_merge != null &&
+      github.event.pull_request.auto_merge.enabled_by.login == inputs.renovate-actor
     permissions:
       pull-requests: write
     # No concurrency group: a cancelled duplicate run shows as a failed check on the PR, and Renovate treats any
