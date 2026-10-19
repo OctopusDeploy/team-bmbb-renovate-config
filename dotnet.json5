@@ -19,8 +19,8 @@
     },
     {
       // Test and build tooling only; a green build is enough.
-      // Only list packages that version independently. Labels are unioned across a group, so a monorepo
-      // package (e.g. Microsoft.AspNetCore.Mvc.Testing) would automerge the production upgrades grouped with it.
+      // Only list packages that version independently. A monorepo package (e.g. Microsoft.AspNetCore.Mvc.Testing)
+      // is grouped with its production packages, and Renovate only auto-merges a group when every package allows it.
       matchPackageNames: [
         'coverlet.*',
         'xunit*',
@@ -32,7 +32,6 @@
         'NSubstitute',
       ],
       automerge: true,
-      addLabels: ['automerge'],
     },
   ],
 }
