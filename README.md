@@ -55,7 +55,7 @@ jobs:
 name: Renovate approve
 on:
   pull_request:
-    types: [labeled, synchronize, auto_merge_enabled]
+    types: [synchronize, auto_merge_enabled]
 jobs:
   renovate-approve:
     uses: OctopusDeploy/team-bmbb-renovate-config/.github/workflows/renovate-approve.yml@main
@@ -84,14 +84,13 @@ Check these when moving a repo over. Most of them fail quietly if they're missin
 Auto-merge is opt-in per package. Renovate turns on GitHub's auto-merge and GitHub does the merge; `renovate-approve`
 only supplies the approval Renovate can't give itself, and withdraws it if anyone else pushes.
 
-1. A package rule sets `automerge: true` and `addLabels: ['automerge']`.
-2. Renovate opens the PR with the `automerge` label, and turns on GitHub's auto-merge (`platformAutomerge`).
-3. The label and turning on auto-merge each trigger `renovate-approve`. Renovate does them in separate calls, in either
-   order, so the second run sees both. It approves the PR only if all of these hold:
+1. A package rule sets `automerge: true`.
+2. Renovate opens the PR and turns on GitHub's auto-merge (`platformAutomerge`).
+3. Turning on auto-merge triggers `renovate-approve`. It approves the PR and adds the `automerge` label only if all of
+   these hold:
    - Renovate's account opened or pushed it, and the branch starts with `renovate/`.
-   - It has the `automerge` label.
-   - Renovate's account turned on GitHub's auto-merge. Labels are combined across a group, but Renovate only turns on
-     auto-merge when every package in the group allows it, so this check catches mixed groups.
+   - Renovate's account turned on GitHub's auto-merge. Renovate only turns it on when every package in a group allows
+     it, so mixed groups are left for a human. Turning on auto-merge by hand never gets a PR approved.
    - `RENOVATE_AUTOMERGE_PAUSED` isn't set.
 4. Main requires branches to be up to date, and GitHub's auto-merge won't update a branch itself. Renovate's default
    `rebaseWhen: 'auto'` rebases automerge PRs that are behind on each nightly run (other PRs only when they conflict),
@@ -99,10 +98,12 @@ only supplies the approval Renovate can't give itself, and withdraws it if anyon
    the next night.
 5. Once the PR is approved and its required checks pass, GitHub squash-merges it.
 
-A PR Renovate hasn't opted in to never gets the label or the approval, so it waits for a human.
+A PR Renovate hasn't opted in to never gets the approval or the label, so it waits for a human. The `automerge` label
+means the bot approved the PR to auto-merge, so it shows at a glance which open PRs will merge on their own and which
+merged PRs did.
 
 If anyone other than Renovate pushes to a `renovate/` branch (including clicking "Update branch"), `renovate-approve`
-dismisses the bot's approval as soon as the push lands, normally well before the new commit's checks pass. The PR
+dismisses the bot's approval and removes the `automerge` label as soon as the push lands, normally well before the new commit's checks pass. The PR
 then needs a human review like any other. Renovate stops updating a branch once someone else has pushed to it, so it isn't approved again. If
 you tick the rebase checkbox, Renovate replaces the branch with its own commits, discarding the pushed changes, and
 the PR is approved again.
@@ -111,10 +112,11 @@ the PR is approved again.
 
 - Only auto-merge what can't reach shipped code: test tooling, dev dependencies, CI actions. A green build should be
   all the confidence you need.
-- Always pair `automerge: true` with `addLabels: ['automerge']`. The approve workflow needs both the label and
-  GitHub's auto-merge turned on by Renovate.
-- Watch out for grouping. `config:recommended` groups monorepo packages, and labels are combined across a group. Don't
-  list a package that ships alongside production packages (e.g. `Microsoft.AspNetCore.Mvc.Testing`).
+- Don't add the `automerge` label with `addLabels`. `renovate-approve` adds it when it approves, so it stays accurate
+  for groups.
+- Watch out for grouping. `config:recommended` groups monorepo packages, and Renovate only auto-merges a group when
+  every package in it allows it. Don't list a package that ships alongside production packages (e.g.
+  `Microsoft.AspNetCore.Mvc.Testing`), because it would never auto-merge.
 - Pin and digest updates skip `minimumReleaseAge`, so keep them on manual review.
 
 ## Pausing auto-merge

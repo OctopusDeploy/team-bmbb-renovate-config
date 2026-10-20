@@ -42,7 +42,6 @@
       matchPackageNames: ['!typescript', '!esbuild', '!@vercel/ncc'],
       matchUpdateTypes: ['minor', 'patch'],
       automerge: true,
-      addLabels: ['automerge'],
     },
     {
       // Actions used by our own workflows. These run in CI but don't ship in dist/. setup-node's `node-version`
@@ -51,7 +50,6 @@
       matchDepNames: ['!node'],
       matchUpdateTypes: ['minor', 'patch'],
       automerge: true,
-      addLabels: ['automerge'],
     },
   ],
 }

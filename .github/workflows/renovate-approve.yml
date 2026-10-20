@@ -1,6 +1,6 @@
 # Reusable workflow that supports Renovate auto-merging the PRs we've opted in to. Renovate turns on GitHub's
-# auto-merge and rebases the PRs onto main on each run, and GitHub does the merge. This approves the PRs, and
-# withdraws the approval if anyone else pushes to the branch.
+# auto-merge and rebases the PRs onto main on each run, and GitHub does the merge. This approves the PRs and labels
+# them `automerge`, and withdraws both if anyone else pushes to the branch.
 #
 # To pause auto-merging, follow "Pausing auto-merge" in README.md. Setting
 # RENOVATE_AUTOMERGE_PAUSED to `true` only stops new approvals: PRs that are already approved still merge.
@@ -23,25 +23,21 @@ on:
 jobs:
   approve-pr-renovate:
     runs-on: ubuntu-latest
-    # Only act on Renovate's own changes, not hand-added labels or edits.
-    # Labels are unioned across a group but Renovate only turns on GitHub's auto-merge when every package allows
-    # it, so also check Renovate turned it on. Mixed groups are left for a human.
-    # Renovate adds the label and turns on auto-merge in separate calls, in either order, so callers trigger on
-    # both `labeled` and `auto_merge_enabled`, and whichever comes second sees both.
+    # Only act on Renovate's own changes. Renovate only turns on GitHub's auto-merge when every package in the PR
+    # allows it, so mixed groups are left for a human. Checking who turned it on means turning on auto-merge by hand
+    # never gets a PR approved, even after Renovate pushes to it again.
+    # Callers trigger on `auto_merge_enabled` (new PRs) and `synchronize` (Renovate's rebases).
     if: >-
       github.event_name == 'pull_request' &&
-      (github.event.action != 'labeled' || github.event.label.name == 'automerge') &&
       vars.RENOVATE_AUTOMERGE_PAUSED != 'true' &&
       github.actor == inputs.renovate-actor &&
       startsWith(github.head_ref, inputs.branch-prefix) &&
-      contains(github.event.pull_request.labels.*.name, 'automerge') &&
       github.event.pull_request.auto_merge != null &&
       github.event.pull_request.auto_merge.enabled_by.login == inputs.renovate-actor
     permissions:
       pull-requests: write
     # No concurrency group: a cancelled duplicate run shows as a failed check on the PR, and Renovate treats any
-    # failed check as a red branch. Each label fires its own run instead: runs for other labels are skipped by the
-    # `if` above, and the step below skips approving again.
+    # failed check as a red branch. The steps below are safe to run more than once instead.
     steps:
       # Renovate can't approve its own PR, so main's required review would never be satisfied.
       - name: ✅ Approve renovate PR
@@ -60,6 +56,15 @@ jobs:
           else
             gh pr review --approve "$PR_URL"
           fi
+
+      # The label shows at a glance which PRs the bot has approved to auto-merge. Renovate doesn't add it, because
+      # Renovate combines labels across a group, so a mixed group would get it without being auto-merged.
+      # Labels added with GITHUB_TOKEN don't trigger other workflows, so this can't loop.
+      - name: 🏷️ Label automerge
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/labels" -f "labels[]=automerge" --silent
 
   # The bot's approval only vouches for Renovate's own changes. If anyone else pushes, dismiss it so the PR needs a
   # human review like any other, rather than auto-merging what they pushed. Renovate stops updating a branch once
@@ -87,3 +92,11 @@ jobs:
               -f event=DISMISS -f message="Someone other than Renovate pushed to this branch, so it needs a human review."
             echo "Dismissed review $id"
           done
+
+      # The PR is no longer approved to auto-merge, so the label would be misleading.
+      - name: 🏷️ Remove automerge label
+        if: contains(github.event.pull_request.labels.*.name, 'automerge')
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh api -X DELETE "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/labels/automerge" --silent
