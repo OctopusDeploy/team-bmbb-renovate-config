@@ -61,7 +61,7 @@
       pinDigests: true,
     },
     {
-      // Keep our actions in one PR so they count once against the PR limits. Majors still get their own PR.
+      // Keep our actions in one PR so they count once against the PR limits. Majors get a separate group PR.
       matchManagers: ['github-actions'],
       matchPackageNames: ['OctopusDeploy/**'],
       groupName: 'Octopus Deploy actions',
