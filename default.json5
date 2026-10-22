@@ -52,7 +52,9 @@
       // Pin third-party actions to a commit SHA, since tags can be moved.
       matchManagers: ['github-actions'],
       matchPackageNames: [
-        '!actions/**', // Official GitHub actions; don't pin.
+        // Official GitHub actions; don't pin.
+        '!actions/**',
+        '!github/**',
         // Our own actions, and our shared workflows, which are deliberately tracked at `main`.
         '!OctopusDeploy/**',
       ],
