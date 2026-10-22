@@ -65,11 +65,11 @@
       groupName: 'Octopus Deploy actions',
     },
     {
-      // Same for GitHub's own actions. setup-node's `node-version` has the packageName `actions/node-versions`,
-      // so exclude it by depName to keep Node updates out of the group.
+      // Same for GitHub's own actions. Toolchain versions from `setup-*` (e.g. `actions/node-versions`) also
+      // match `actions/**`, so match only `uses:` refs by datasource to keep them out of the group.
       matchManagers: ['github-actions'],
+      matchDatasources: ['github-tags'],
       matchPackageNames: ['actions/**', 'github/**'],
-      matchDepNames: ['!node'],
       groupName: 'GitHub actions',
     },
   ],
