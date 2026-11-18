@@ -119,6 +119,19 @@ the PR is approved again.
   `Microsoft.AspNetCore.Mvc.Testing`), because it would never auto-merge.
 - Pin and digest updates skip `minimumReleaseAge`, so keep them on manual review.
 
+## Triaging manual PRs
+
+For PRs that don't auto-merge, run `/renovate-triage` in Claude Code from this repo. It reads each PR's release notes
+and checks them against how the repo uses the package. Then it posts a comment with its assessment and labels the PR
+`triage:low-risk` or `triage:needs-check`. The comment says it's an AI assessment and cites the code it checked, so you
+can agree with it or not before you merge.
+
+It never pushes, approves or merges, so it doesn't interfere with Renovate. Pass `dry-run` to see what it would post,
+or a repo name to triage one repo.
+
+Before the first run, create `.claude/skills/renovate-triage/repos.txt` with the repos you want it to cover, one
+`owner/repo` per line. The file is gitignored, so it stays local.
+
 ## Pausing auto-merge
 
 During a supply-chain incident:
