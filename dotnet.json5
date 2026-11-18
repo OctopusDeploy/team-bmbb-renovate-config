@@ -33,5 +33,11 @@
       ],
       automerge: true,
     },
+    {
+      // Our own small, slow-moving runtime libraries, covered by the tests that use them.
+      matchPackageNames: ['Octopus.TinyTypes*', 'Octopus.Versioning'],
+      matchUpdateTypes: ['minor', 'patch'],
+      automerge: true,
+    },
   ],
 }
