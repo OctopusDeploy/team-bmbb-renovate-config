@@ -58,6 +58,9 @@
         // Our own actions, and our shared workflows, which are deliberately tracked at `main`.
         '!OctopusDeploy/**',
       ],
+      // Tool versions read from action inputs (e.g. golangci-lint-action's `version`) have nowhere to put a SHA,
+      // so pinning them fails the branch update.
+      matchDepTypes: ['!uses-with'],
       pinDigests: true,
     },
     {
