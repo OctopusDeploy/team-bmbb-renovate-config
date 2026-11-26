@@ -179,7 +179,7 @@ Build the comment for each triaged PR:
 ```markdown
 > 🤖 AI-generated assessment by the `renovate-triage` skill.
 
-### Renovate triage: <verdict>
+### <emoji> Renovate triage: <verdict>
 
 **<Why | To check>:** <headline>
 
@@ -194,7 +194,8 @@ Build the comment for each triaged PR:
 <!-- renovate-triage: <upgrades, sorted by name and joined with ", "> | verdict=<verdict> -->
 ```
 
-Use **Why** for `low-risk` and **To check** for `needs-check`.
+For `low-risk`, use 🟢 and **Why**. For `needs-check`, use ⚠️ and **To check**. Never use ✅, because it reads as a
+passing check or an approval.
 
 The marker is how later runs decide whether to skip a PR. Keep its format exact, for example:
 `<!-- renovate-triage: @eslint/js 9.39.5->10.0.0 (tooling), eslint 9.39.5->10.0.0 (tooling) | verdict=needs-check -->`.
