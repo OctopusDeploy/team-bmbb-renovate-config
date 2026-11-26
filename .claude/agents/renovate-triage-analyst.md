@@ -97,7 +97,7 @@ relative to `clone/` (for example `action.yml:36`), because the answer ends up i
 
 ```
 verdict: low-risk | needs-check
-headline: <one sentence, 25 words at most. For low-risk, why it's safe. For needs-check, what to check and where, problem packages first.>
+headline: <30 words at most. For low-risk, why it's safe. For needs-check, what to check and where, problem packages first.>
 upgrades:
 - <name> <from>-><to> (<runtime|tooling>)
 evidence:

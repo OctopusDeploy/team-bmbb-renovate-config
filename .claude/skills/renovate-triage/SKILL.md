@@ -172,7 +172,7 @@ Check each answer before using it:
 If an answer fails these checks, treat the PR as `needs-check` and make the headline "The assessment was incomplete;
 review by hand."
 
-If the only problem is length (a headline over one sentence, or more than six evidence bullets), keep the verdict and
+If the only problem is length (a headline over 30 words, or more than six evidence bullets), keep the verdict and
 ask that subagent once to shorten its answer.
 
 ## 4. Comment and label
