@@ -228,8 +228,11 @@ per PR: the PR link, a short title, and a few words. Leave the details on the PR
 - [#101](url) some-lib v3: only drops support for a Node version we don't use
 - [#102](url) pin dependencies: SHAs match their tags (overlaps #104)
 
-**Needs a check**
+**Needs a check, CI green**
 - [#103](url) some-compiler v6: check the changed default in tsconfig.json
+
+**Needs a check, CI failing**
+- [#106](url) some-framework v4: ESM-only, but the build compiles to require()
 
 **Low-risk, waiting**
 - [#104](url) some-action v5: checks failing (overlaps #102)
@@ -248,7 +251,10 @@ Work out readiness now, from the data you already listed. Never store it in the 
   `BLOCKED` is expected, because the PR still needs a review.
 - **Low-risk, waiting:** `$LOW_RISK_LABEL`, but not ready. Say why: checks pending, checks failing, behind, or
   conflicts. If `mergeable` is `UNKNOWN`, query it once more before deciding.
-- **Needs a check:** `$NEEDS_CHECK_LABEL`.
+- **Needs a check, CI green:** `$NEEDS_CHECK_LABEL`, and no check has failed. Pending checks count as green, because
+  nothing has caught the problem yet, and a passing build won't stop someone merging them.
+- **Needs a check, CI failing:** `$NEEDS_CHECK_LABEL`, and at least one check has finished without passing. CI
+  already blocks these.
 - **Modified by a human.**
 
 End the line of any PR that overlaps others with `(overlaps #A, #B)`, using the groups from step 1, so a reviewer
