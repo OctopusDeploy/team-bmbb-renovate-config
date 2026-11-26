@@ -90,9 +90,12 @@ Sort each PR into one of these:
 
 - **Modified by a human:** the commit check above prints `true`. Don't give a verdict. If it has either triage label,
   remove it, because the verdict no longer describes the branch.
-- **Already triaged:** its marker's upgrade list matches the PR's current one. Skip it, unless `force` is set. If its
+- **Already triaged:** its marker lists the same upgrades as the PR's table. Skip it, unless `force` is set. If its
   triage label differs from the marker's verdict, or is missing, someone changed it by hand. Leave it alone, and
-  report it under its current label.
+  report it under its current label. Compare the two as sets of `<name> <from>-><to>` entries:
+  - From the marker, take the entries before ` | verdict=` and drop each one's trailing ` (<kind>)`.
+  - From each table row, take the package name, written `<old>=><new>` for a replacement, and the two backticked
+    versions in the Change column. Write a missing current version as `none`.
 - **To triage:** everything else.
 
 Then group the PRs that overlap: two PRs overlap when their upgrade tables share a package name. For a replacement,
@@ -163,8 +166,8 @@ Start one `renovate-triage-analyst` subagent per PR, all in the same message so 
 Check each answer before using it:
 
 - `verdict` is exactly `low-risk` or `needs-check`.
-- `upgrades` has one line per table row.
-- The evidence cites files.
+- `upgrades` lists the same entries as the table, compared the way step 1 compares a marker.
+- The evidence contains at least one `path:line`.
 
 If an answer fails these checks, treat the PR as `needs-check` and make the headline "The assessment was incomplete;
 review by hand."
