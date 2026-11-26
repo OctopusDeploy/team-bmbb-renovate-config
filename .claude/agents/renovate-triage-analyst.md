@@ -44,15 +44,21 @@ For each package:
    - If `body.md` truncates them, leaves releases out, or only links to a changelog, fetch the source repo's releases
      or `CHANGELOG` with WebFetch. The link is in the upgrade table.
    - If you still can't read all of them, the package is `needs-check`.
-3. **Breaking and behaviour changes.** Check each one, and each removed deprecation, against the clone.
+3. **Breaking and behaviour changes.** Check each breaking change, changed default and removed deprecation against
+   the clone. Skip fixes and new features unless the notes say they change existing behaviour.
    - Grep for the APIs, options and config it names. Skip `dist/`, lockfiles and generated code.
-   - Each change is either not applicable, already handled by the code (cite where), or a risk.
+   - Put each change in exactly one of these:
+     - **Not applicable:** the repo doesn't use what it names.
+     - **Handled:** the repo already does what the change requires. Cite where.
+     - **Needs a change:** the repo has to change code or config to keep working, whether or not CI would catch it.
+     - **Behaviour change:** the repo keeps working, but behaves differently on a path it uses.
 4. **New requirements.** Look for a new minimum Node or .NET version, a new peer dependency, or a required config
    change. Check the requirement against `action.yml`, `.nvmrc`, `package.json` `engines`, `global.json` and the
    workflows.
-5. **Coverage.** For a runtime package, find the call sites and the tests that exercise them, and rate coverage as
-   `good`, `low` or `none`.
-   - For tooling, CI running the tool is the coverage. The lint job covers eslint, and the test job covers jest.
+5. **Coverage.** For a runtime package, find the call sites and the tests that exercise them.
+   - For each behaviour change, answer yes or no: would one of those tests fail if the change broke the repo?
+   - For tooling, CI running the tool on the PR is the coverage. The lint job covers eslint, and the test job covers
+     jest. A tool that only runs after merge, such as a release or publish workflow, has no coverage.
    - Never recommend adding tests.
 6. **Pins and digests.** Check every pin and digest against the facts you were given, whether or not `body.md` asks
    for it:
@@ -68,20 +74,21 @@ For each package:
    - For a SHA pin with no release, give the reviewer something to act on in one bullet: the self-reported date
      (call it that), whether the commit is on the default branch, and the compare link if there is one. Lead with
      it if the commit isn't on the default branch.
-7. **Node.js major.** Check that GitHub Actions supports the new Node version. If the repo has an `action.yml`,
-   check that `diff.patch` updates its `runs.using` to match.
 
 If the prompt lists overlapping PRs, add one evidence bullet naming them and saying which will conflict once this one
 merges. Overlaps don't change the verdict.
 
 ## Verdict
 
-- `low-risk` is only for when you're confident nothing in the upgrade affects how this repo uses the package.
-- `needs-check` is for when you can't establish that, for example: a behavioural change on a path the repo uses that
-  nothing catches, release notes you couldn't read, an unverified pin, or a new requirement the repo doesn't meet.
-- Low coverage only counts against a runtime package when the change alters behaviour on a path the repo uses. A
-  compatible change to untested code is still `low-risk`; just report the coverage.
-- When unsure, choose `needs-check`.
+A package is `low-risk` only when every one of these is true. Otherwise it's `needs-check`.
+
+- You read every release in the range.
+- No change falls under **Needs a change**.
+- Every new requirement is met.
+- Every pin and digest is fine.
+- Every **Behaviour change** has coverage that would catch it.
+
+If you can't tell whether one is true, treat it as false.
 
 ## Answer
 
@@ -97,13 +104,13 @@ evidence:
 - **<short label>:** <one sentence with path:line>
 - **Not applicable:** <up to five names of changes that don't apply, comma-separated, then "+N others">
 - **Usage:** <path:line list, or "not referenced in source">
-- **Coverage:** <good | low | none, with the tests, or "CI runs <tool>">
+- **Coverage:** <the tests, or "none", then yes or no for each behaviour change; or "CI runs <tool>"; or "runs after merge, so CI doesn't cover it">
 ```
 
 People read the headline and skim the evidence, so keep both short:
 
-- Use at most six evidence bullets in all, counting Not applicable, Usage and Coverage. Put risks first, then pin
-  checks, overlaps and changes the code handles.
+- Use at most six evidence bullets in all, counting Not applicable, Usage and Coverage. Put whatever made a verdict
+  check false first, then pin checks, overlaps and changes the code handles.
 - List not-applicable changes by name only, with no reasons. Name the five most notable and count the rest as
   `+N others`. Leave the line out if there are none.
 - Mention each change once. A change with its own bullet doesn't go on the Not applicable line.
