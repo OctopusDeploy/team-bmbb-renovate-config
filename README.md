@@ -123,8 +123,8 @@ the PR is approved again.
 
 For PRs that don't auto-merge, run `/renovate-triage` in Claude Code from this repo. It reads each PR's release notes
 and checks them against how the repo uses the package. Then it posts a comment with its assessment and labels the PR
-`triage:low-risk` or `triage:needs-check`. The comment says it's an AI assessment and cites the code it checked, so you
-can agree with it or not before you merge.
+`triage:low-risk` or `triage:needs-check`. The comment says it's an AI assessment posted without human review, and cites
+the code it checked, so you can agree with it or not before you merge.
 
 It never pushes, approves or merges, so it doesn't interfere with Renovate. Pass `dry-run` to see what it would post,
 or a repo name to triage one repo.
